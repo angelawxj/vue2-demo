@@ -321,7 +321,6 @@ export default {
   position: relative;
   background-color: white;
   border-left: 2px solid #ddd;
-  padding: 20px;
 }
 
 .widget-container wxj-widget {
