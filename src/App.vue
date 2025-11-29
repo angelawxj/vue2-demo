@@ -51,15 +51,19 @@
       </div>
 
       <!-- 接收插入代码区域 -->
-      <div class="input-section" v-if="receivedCode">
+      <div class="input-section">
         <h4>接收到的代码</h4>
         <el-input
           v-model="receivedCode"
           type="textarea"
-          :rows="5"
+          :rows="3"
           readonly
           placeholder="这里将显示从 wxj-widget 接收到的代码"
         ></el-input>
+        <div style="margin-top: 10px; display: flex; gap: 5px;">
+          <el-button @click="copyCode" type="success" size="small">复制代码</el-button>
+          <el-button @click="clearCode" type="warning" size="small">清空代码</el-button>
+        </div>
         <div style="margin-top: 10px; font-size: 12px; color: #666;">
           代码来自 wxj-widget 的插入功能
         </div>
@@ -81,7 +85,17 @@
     </div>
 
     <!-- 右侧 wxj-widget 弹框 -->
-    <div v-if="isWidgetVisible" class="widget-container">
+    <div 
+      v-if="isWidgetVisible" 
+      class="widget-container"
+      :style="{ width: widgetWidth + 'px' }"
+    >
+      <!-- 拖动条 -->
+      <div 
+        class="resize-handle"
+        @mousedown="startResize"
+      ></div>
+      
       <!-- 传递主题参数给 wxj-widget -->
       <wxj-widget 
         ref="wxjWidget"
@@ -114,13 +128,28 @@ export default {
       endLine: 5,
       
       // 接收到的代码
-      receivedCode: ''
+      receivedCode: '',
+      
+      // 窗口宽度相关
+      widgetWidth: 400, // 默认宽度
+      isResizing: false,
+      startX: 0,
+      startWidth: 0
     }
   },
   mounted() {
     // 初始化时设置主题和窗口状态
     this.setTheme(this.currentTheme);
     this.setWindowState(this.windowState);
+    
+    // 添加全局事件监听
+    document.addEventListener('mousemove', this.handleResize);
+    document.addEventListener('mouseup', this.stopResize);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    document.removeEventListener('mousemove', this.handleResize);
+    document.removeEventListener('mouseup', this.stopResize);
   },
   methods: {
     // 处理主题切换
@@ -187,6 +216,38 @@ export default {
       } catch (e) {
         console.warn('无法保存到本地存储:', e);
       }
+    },
+    
+    // 复制代码到剪贴板
+    copyCode() {
+      if (!this.receivedCode.trim()) {
+        this.$message.warning('没有可复制的代码');
+        return;
+      }
+      
+      navigator.clipboard.writeText(this.receivedCode).then(() => {
+        this.$message.success('代码已复制到剪贴板');
+      }).catch(err => {
+        console.error('复制失败:', err);
+        // 降级方案
+        const textArea = document.createElement('textarea');
+        textArea.value = this.receivedCode;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          this.$message.success('代码已复制到剪贴板');
+        } catch (e) {
+          this.$message.error('复制失败');
+        }
+        document.body.removeChild(textArea);
+      });
+    },
+    
+    // 清空代码
+    clearCode() {
+      this.receivedCode = '';
+      this.$message.info('已清空代码');
     },
     
     // 发送问答到 wxj-widget
@@ -269,6 +330,32 @@ export default {
           this.askQuestion();
         });
       }
+    },
+
+    // 开始调整宽度
+    startResize(event) {
+      this.isResizing = true;
+      this.startX = event.clientX;
+      this.startWidth = this.widgetWidth;
+      event.preventDefault();
+    },
+
+    // 处理调整宽度
+    handleResize(event) {
+      if (!this.isResizing) return;
+      
+      const deltaX = this.startX - event.clientX;
+      const newWidth = this.startWidth + deltaX;
+      
+      // 限制最小和最大宽度
+      if (newWidth >= 300 && newWidth <= 800) {
+        this.widgetWidth = newWidth;
+      }
+    },
+
+    // 停止调整宽度
+    stopResize() {
+      this.isResizing = false;
     }
   }
 }
@@ -316,31 +403,45 @@ export default {
   font-weight: bold;
 }
 
-.widget-container {
-  flex: 1;
-  position: relative;
-  background-color: white;
-  border-left: 2px solid #ddd;
-}
-
-.widget-container wxj-widget {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-}
-
 /* 弹框样式 */
 .widget-container {
   position: absolute;
   top: 0;
   right: 0;
-  width: 400px; /* 弹框的宽度 */
   height: 100%; /* 满高 */
   background-color: white;
   border-left: 2px solid #ddd;
   box-shadow: -4px 0px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transition: transform 0.3s ease;
+  min-width: 300px; /* 最小宽度 */
+  max-width: 800px; /* 最大宽度 */
+}
+
+/* 拖动条样式 */
+.resize-handle {
+  position: absolute;
+  left: -5px;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 1001;
+}
+
+.resize-handle:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+.resize-handle:active {
+  background-color: rgba(66, 133, 244, 0.2);
+}
+
+.widget-container wxj-widget {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
 }
 
 .el-button {
@@ -359,8 +460,12 @@ export default {
   }
   
   .widget-container {
-    width: 100%;
+    width: 100% !important;
     position: relative;
+  }
+  
+  .resize-handle {
+    display: none; /* 在移动端隐藏拖动条 */
   }
 }
 </style>
