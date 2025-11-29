@@ -21,33 +21,33 @@
           :rows="3"
           placeholder="请输入问题"
         ></el-input>
-        <div class="file-inputs" style="margin-top: 10px;">
+        <div class="file-inputs" style="margin-top: 10px">
           <el-input
             v-model="fileName"
             placeholder="文件名（可选）"
-            style="margin-bottom: 5px;"
+            style="margin-bottom: 5px"
           ></el-input>
           <el-input
             v-model="filePath"
             placeholder="文件路径（可选）"
-            style="margin-bottom: 5px;"
+            style="margin-bottom: 5px"
           ></el-input>
-          <div class="range-inputs" style="display: flex; gap: 5px; margin-bottom: 10px;">
+          <div class="range-inputs" style="display: flex; gap: 5px; margin-bottom: 10px">
             <el-input
               v-model.number="startLine"
               type="number"
               placeholder="起始行"
-              style="flex: 1;"
+              style="flex: 1"
             ></el-input>
             <el-input
               v-model.number="endLine"
               type="number"
               placeholder="结束行"
-              style="flex: 1;"
+              style="flex: 1"
             ></el-input>
           </div>
         </div>
-        <el-button @click="askQuestion" type="primary" style="margin-top: 10px;">发送问题</el-button>
+        <el-button @click="askQuestion" type="primary" style="margin-top: 10px">发送问题</el-button>
       </div>
 
       <!-- 接收插入代码区域 -->
@@ -60,11 +60,11 @@
           readonly
           placeholder="这里将显示从 wxj-widget 接收到的代码"
         ></el-input>
-        <div style="margin-top: 10px; display: flex; gap: 5px;">
+        <div style="margin-top: 10px; display: flex; gap: 5px">
           <el-button @click="copyCode" type="success" size="small">复制代码</el-button>
           <el-button @click="clearCode" type="warning" size="small">清空代码</el-button>
         </div>
-        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+        <div style="margin-top: 10px; font-size: 12px; color: #666">
           代码来自 wxj-widget 的插入功能
         </div>
       </div>
@@ -85,19 +85,12 @@
     </div>
 
     <!-- 右侧 wxj-widget 弹框 -->
-    <div 
-      v-if="isWidgetVisible" 
-      class="widget-container"
-      :style="{ width: widgetWidth + 'px' }"
-    >
+    <div v-if="isWidgetVisible" class="widget-container" :style="{ width: widgetWidth + 'px' }">
       <!-- 拖动条 -->
-      <div 
-        class="resize-handle"
-        @mousedown="startResize"
-      ></div>
-      
+      <div class="resize-handle" @mousedown="startResize"></div>
+
       <!-- 传递主题参数给 wxj-widget -->
-      <wxj-widget 
+      <wxj-widget
         ref="wxjWidget"
         :theme="currentTheme"
         @insert-code="handleInsertCode"
@@ -112,36 +105,36 @@ import { WxjWidget } from 'wxj-widget';
 export default {
   name: 'App',
   components: {
-    WxjWidget
+    WxjWidget,
   },
   data() {
     return {
       isWidgetVisible: false, // 控制 wxj-widget 是否显示
       currentTheme: 'light', // 默认主题是 'light'
       windowState: true, // 窗口状态
-      
+
       // 输入框数据
       questionInput: '',
       fileName: '',
       filePath: '',
       startLine: 1,
       endLine: 5,
-      
+
       // 接收到的代码
       receivedCode: '',
-      
+
       // 窗口宽度相关
       widgetWidth: 400, // 默认宽度
       isResizing: false,
       startX: 0,
-      startWidth: 0
-    }
+      startWidth: 0,
+    };
   },
   mounted() {
     // 初始化时设置主题和窗口状态
     this.setTheme(this.currentTheme);
     this.setWindowState(this.windowState);
-    
+
     // 添加全局事件监听
     document.addEventListener('mousemove', this.handleResize);
     document.addEventListener('mouseup', this.stopResize);
@@ -163,13 +156,13 @@ export default {
     setTheme(theme) {
       if (theme === 'light' || theme === 'dark') {
         this.currentTheme = theme;
-        
+
         // 传递给 wxj-widget
         const widget = this.$refs.wxjWidget;
         if (widget && widget.setTheme) {
           widget.setTheme(theme);
         }
-        
+
         console.log(`主题已切换为: ${theme}`);
         this.$message.success(`主题已切换为${theme === 'light' ? '浅色' : '深色'}`);
       } else {
@@ -187,7 +180,7 @@ export default {
     setWindowState(state) {
       this.windowState = Boolean(state);
       this.isWidgetVisible = this.windowState;
-      
+
       console.log(`窗口状态已设置为: ${this.windowState ? '打开' : '关闭'}`);
       this.$message.success(`窗口已${this.windowState ? '打开' : '关闭'}`);
     },
@@ -198,7 +191,7 @@ export default {
         this.receivedCode = code;
         console.log('接收到插入的代码:', code);
         this.$message.success('已接收到插入的代码');
-        
+
         // 这里可以处理接收到的代码，比如保存到文件、显示在编辑器等
         this.processReceivedCode(code);
       }
@@ -209,7 +202,7 @@ export default {
       // 在这里添加处理代码的逻辑
       // 例如：保存到本地存储、发送到后端、显示在编辑器等
       console.log('处理接收到的代码:', code);
-      
+
       // 示例：保存到本地存储
       try {
         localStorage.setItem('lastInsertedCode', code);
@@ -217,82 +210,86 @@ export default {
         console.warn('无法保存到本地存储:', e);
       }
     },
-    
+
     // 复制代码到剪贴板
     copyCode() {
       if (!this.receivedCode.trim()) {
         this.$message.warning('没有可复制的代码');
         return;
       }
-      
-      navigator.clipboard.writeText(this.receivedCode).then(() => {
-        this.$message.success('代码已复制到剪贴板');
-      }).catch(err => {
-        console.error('复制失败:', err);
-        // 降级方案
-        const textArea = document.createElement('textarea');
-        textArea.value = this.receivedCode;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand('copy');
+
+      navigator.clipboard
+        .writeText(this.receivedCode)
+        .then(() => {
           this.$message.success('代码已复制到剪贴板');
-        } catch (e) {
-          this.$message.error('复制失败');
-        }
-        document.body.removeChild(textArea);
-      });
+        })
+        .catch((err) => {
+          console.error('复制失败:', err);
+          // 降级方案
+          const textArea = document.createElement('textarea');
+          textArea.value = this.receivedCode;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            this.$message.success('代码已复制到剪贴板');
+          } catch (e) {
+            this.$message.error('复制失败');
+          }
+          document.body.removeChild(textArea);
+        });
     },
-    
+
     // 清空代码
     clearCode() {
       this.receivedCode = '';
       this.$message.info('已清空代码');
     },
-    
+
     // 发送问答到 wxj-widget
     askQuestion() {
       if (!this.questionInput.trim()) {
         this.$message.warning('请输入问题');
         return;
       }
-      
+
       const widget = this.$refs.wxjWidget;
       if (widget && widget.askQuestions) {
         const files = [];
-        
+
         // 如果有文件信息，添加到files数组中
         if (this.fileName || this.filePath) {
           const fileInfo = {
             name: this.fileName || '',
             ...(this.filePath && { filePath: this.filePath }),
-            ...(this.startLine && this.endLine && { 
-              range: {
-                startLine: Number(this.startLine),
-                endLine: Number(this.endLine)
-              }
-            })
+            ...(this.startLine &&
+              this.endLine && {
+                range: {
+                  startLine: Number(this.startLine),
+                  endLine: Number(this.endLine),
+                },
+              }),
           };
           files.push(fileInfo);
         }
-        
+
         widget.askQuestions({
           prompt: this.questionInput,
           type: 'text',
-          files: files
+          files: files,
         });
-        
+
         // 清空输入框
         this.questionInput = '';
         this.fileName = '';
         this.filePath = '';
         this.startLine = 1;
         this.endLine = 5;
-        
+
         this.$message.success('问题发送成功');
       }
     },
-    
+
     // 切换 wxj-widget 显示/隐藏
     toggleWidgetVisibility() {
       this.isWidgetVisible = !this.isWidgetVisible;
@@ -343,10 +340,10 @@ export default {
     // 处理调整宽度
     handleResize(event) {
       if (!this.isResizing) return;
-      
+
       const deltaX = this.startX - event.clientX;
       const newWidth = this.startWidth + deltaX;
-      
+
       // 限制最小和最大宽度
       if (newWidth >= 300 && newWidth <= 800) {
         this.widgetWidth = newWidth;
@@ -356,9 +353,9 @@ export default {
     // 停止调整宽度
     stopResize() {
       this.isResizing = false;
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style>
@@ -453,17 +450,17 @@ export default {
   .container {
     flex-direction: column;
   }
-  
+
   .controls {
     width: 100%;
     height: auto;
   }
-  
+
   .widget-container {
     width: 100% !important;
     position: relative;
   }
-  
+
   .resize-handle {
     display: none; /* 在移动端隐藏拖动条 */
   }
